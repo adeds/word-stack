@@ -38,7 +38,10 @@ class MainActivity : AppCompatActivity() {
     private val random = Random()
     private lateinit var stackedLayout: StackedLayout
     private var word1: String? = null
+    private var guestWord1 = ""
     private var word2: String? = null
+    private var guestWord2 = ""
+    private var isLastWord1 = false
     private val placedTiles: Stack<LetterTile> = Stack()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,9 +67,9 @@ class MainActivity : AppCompatActivity() {
         stackedLayout = StackedLayout(this)
         binding.verticalLayout.addView(stackedLayout, 3)
         binding.word1.setOnTouchListener(TouchListener())
-        //binding.word1.setOnDragListener(new DragListener());
+        binding.word1.setOnDragListener(DragListener());
         binding.word2.setOnTouchListener(TouchListener())
-        //binding.word2.setOnDragListener(new DragListener());
+        binding.word2.setOnDragListener(DragListener());
 
         initClickListener()
     }
@@ -79,26 +82,32 @@ class MainActivity : AppCompatActivity() {
     private inner class TouchListener : View.OnTouchListener {
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             if (event.action == MotionEvent.ACTION_DOWN && !stackedLayout.empty()) {
-                val tile = stackedLayout.peek() as LetterTile
-                placedTiles.push(tile)
-                tile.moveToViewGroup(v as ViewGroup)
-                if (stackedLayout.empty()) {
-                    binding.messageBox.text = "$word1 $word2"
-                }
-                /**
-                 *
-                 * YOUR CODE GOES HERE
-                 *
-                 */
+                setLetter(v, stackedLayout.peek() as LetterTile)
                 return true
             }
             return false
         }
     }
 
+    private fun setLetter(v: View, tile: LetterTile) {
+        placedTiles.push(tile)
+        tile.moveToViewGroup(v as ViewGroup)
+        isLastWord1 = v == binding.word1
+        if (isLastWord1)
+            guestWord1 += tile.text
+        else guestWord2 += tile.text
+
+        if (stackedLayout.empty()) {
+            val text = if (words.contains(guestWord1) && words.contains(guestWord2)) {
+                "Youre Genius, challenge me again!"
+            } else "Almost there, try again!"
+            binding.messageBox.text = "$guestWord1 & $guestWord2 ?\n$text"
+            binding.undoButton.isEnabled = false
+        }
+    }
+
     private inner class DragListener : View.OnDragListener {
         override fun onDrag(v: View, event: DragEvent): Boolean {
-            val action: Int = event.getAction()
             when (event.action) {
                 DragEvent.ACTION_DRAG_STARTED -> {
                     v.setBackgroundColor(LIGHT_BLUE)
@@ -121,17 +130,7 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
                 DragEvent.ACTION_DROP -> {
-                    // Dropped, reassign Tile to the target Layout
-                    val tile = event.getLocalState() as LetterTile
-                    tile.moveToViewGroup(v as ViewGroup)
-                    if (stackedLayout.empty()) {
-                        binding.messageBox.text = "$word1 $word2"
-                    }
-                    /**
-                     *
-                     * YOUR CODE GOES HERE
-                     *
-                     */
+                    setLetter(v, event.localState as LetterTile)
                     return true
                 }
             }
@@ -143,11 +142,14 @@ class MainActivity : AppCompatActivity() {
         stackedLayout.clear()
         binding.word1.removeAllViews()
         binding.word2.removeAllViews()
+        binding.undoButton.isEnabled = true
+        guestWord2 = ""
+        guestWord1 = ""
 
         random.nextInt(words.size).let { word1 = words[it] }
         random.nextInt(words.size).let { word2 = words[it] }
 
-        val scrambleText = scramble(random, word1 + word2)
+        val scrambleText = scramble(word1, word2, random)
         binding.messageBox.text = scrambleText
         var count = scrambleText.length
 
@@ -161,6 +163,9 @@ class MainActivity : AppCompatActivity() {
         if (placedTiles.isEmpty().not()) {
             val tile = placedTiles.pop()
             tile.moveToViewGroup(stackedLayout)
+            if (isLastWord1)
+                guestWord1 = guestWord1.removeLastChars()
+            else guestWord2 = guestWord2.removeLastChars()
         }
     }
 

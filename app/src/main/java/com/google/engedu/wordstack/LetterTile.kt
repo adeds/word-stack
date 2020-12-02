@@ -14,12 +14,14 @@
  */
 package com.google.engedu.wordstack
 
+import android.content.ClipData
 import android.content.Context
 import android.graphics.Color
 import android.view.MotionEvent
 import android.view.ViewGroup
 
-class LetterTile(context: Context, letter: Char) : androidx.appcompat.widget.AppCompatTextView(context) {
+class LetterTile(context: Context, letter: Char) :
+    androidx.appcompat.widget.AppCompatTextView(context) {
     private var frozen = false
     fun moveToViewGroup(targetView: ViewGroup) {
         val parent = parent
@@ -45,6 +47,22 @@ class LetterTile(context: Context, letter: Char) : androidx.appcompat.widget.App
     }
 
     override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
+        if (frozen.not() && motionEvent.action == MotionEvent.ACTION_DOWN) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                startDragAndDrop(
+                    ClipData.newPlainText("", ""),
+                    DragShadowBuilder(this),
+                    this,
+                    0
+                )
+            } else startDrag(
+                ClipData.newPlainText("", ""),
+                DragShadowBuilder(this),
+                this,
+                0
+            )
+            return true
+        }
         /**
          *
          * YOUR CODE GOES HERE
