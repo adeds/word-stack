@@ -20,22 +20,23 @@ import android.widget.LinearLayout
 import java.util.*
 
 class StackedLayout(context: Context?) : LinearLayout(context) {
-    private val tiles: Stack<View?> = Stack()
-    fun push(tile: View?) {
-        /**
-         *
-         * YOUR CODE GOES HERE
-         *
-         */
+    private val tiles: Stack<View> = Stack()
+
+    fun push(tile: View) {
+        if (!tiles.isEmpty()) removeView(tiles.lastElement())
+        tiles.push(tile)
+        addView(tile)
     }
 
     fun pop(): View? {
-        /**
-         *
-         * YOUR CODE GOES HERE
-         *
-         */
-        return null
+        return if (tiles.isEmpty().not()) {
+            val popped = tiles.lastElement()
+            removeView(popped)
+            tiles.pop()
+            if (tiles.isEmpty().not())
+                addView(tiles.lastElement())
+            popped
+        } else null
     }
 
     fun peek(): View? {
@@ -47,10 +48,7 @@ class StackedLayout(context: Context?) : LinearLayout(context) {
     }
 
     fun clear() {
-        /**
-         *
-         * YOUR CODE GOES HERE
-         *
-         */
+        tiles.clear()
+        removeAllViews()
     }
 }
